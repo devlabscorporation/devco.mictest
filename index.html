@@ -1,133 +1,38 @@
 <!DOCTYPE html>
-<html lang="en"><head>
-    
+<html lang="es">
+<head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <link rel="shortcut icon" href="DS_Logo_SF.png" type="image/x-icon">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test de Micrófono</title>
     <style>
-        body {
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        #container {
-            width: 30%;
-            background-color: #b3e5fc;
-            height: 10px;
-            display: flex;
-            align-items: center;
-            border-radius:20px;
-            overflow:hidden;
-        }
-
-        .bar {
-            background-color: #7668AF;
-            height: 100%;
-            width: 0; 
-            transition: width 0.1s;
-        }
-
-        #message {
-            color: white;
-            font-size: 24px;
-            display: none;
-            font-family:arial;
-        }
-
-        #preloader {
-            background-image: url('https://i.pinimg.com/originals/47/24/f4/4724f4b7941df23b95656c6ed9848a68.gif');
-            background-size: 50px 50px;
-            width: 50px;
-            height: 50px;
-            animation: spin 2s linear infinite;
-            display: none;
-        }
+        /* Estilos CSS de tu página de prueba de micrófono */
     </style>
 </head>
 <body>
-    <div id="preloader" style="display: none;">Esperando permiso...</div>
-    <div id="container">
-        <div class="bar" style="width: 63.7891%;"></div>
-    </div>
-    <div id="message" style="display: none;"></div>
     <script>
         // Comprobar si se tiene permiso para acceder al micrófono
         async function checkMicrophonePermission() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 // Se obtuvo el permiso, realizar el test de micrófono
-                document.getElementById("preloader").style.display = "none";
-                document.getElementById("message").style.display = "none";
-                runMicrophoneTest(stream);
+                runMicrophoneTest(stream, true);
             } catch (error) {
-                // No se tiene permiso o el micrófono no funciona, mostrar mensaje y preloader
-                document.getElementById("preloader").style.display = "block";
-                document.getElementById("container").style.display = "none";
-                document.getElementById("message").innerText = "Esperando permiso o verifique su micrófono";
-                document.getElementById("message").style.display = "block";
-                showPoints();
+                // No se tiene permiso o el micrófono no funciona, realizar el test de micrófono con fallo
+                runMicrophoneTest(null, false);
             }
-        }
-
-        // Mostrar un punto en lugar de la barra
-        function showPoints() {
-            const bar = document.querySelector(".bar");
-            bar.classList.add("point");
         }
 
         // Realizar el test de micrófono
-        async function runMicrophoneTest(stream) {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const analyser = audioContext.createAnalyser();
-            analyser.fftSize = 256;
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        async function runMicrophoneTest(stream, testPassed) {
+            // Realizar el test y determinar si se aprobó o no
+            // Puedes implementar tu lógica de prueba aquí y establecer testPassed en true o false
 
-            // Conectar el analizador al micrófono
-            const audioStreamNode = audioContext.createMediaStreamSource(stream);
-            audioStreamNode.connect(analyser);
+            // Finalizado el test, enviar el resultado a la página principal
+            sendMessageToOpener(testPassed);
 
-            // Inicializar la barra
-            const bar = document.querySelector(".bar");
-
-            // Realizar una lectura de audio durante 10 segundos
-            const interval = setInterval(() => {
-                analyser.getByteFrequencyData(dataArray);
-
-                // Calcular la escala de la barra según los datos del micrófono
-                const scale = dataArray.reduce((a, b) => a + b) / dataArray.length / 100;
-                bar.style.width = `${scale * 100}%`;
-            }, 100);
-
-            // Detener el micrófono y la animación después de 10 segundos
-            setTimeout(() => {
-                clearInterval(interval);
-                stream.getTracks().forEach(track => track.stop());
-                showTestResult(true);
-            }, 10000);
-        }
-
-        // Mostrar el resultado del test
-        function showTestResult(approved) {
-            const container = document.getElementById("container");
-            const message = document.getElementById("message");
-
-            container.style.animation = "none"; // Detener la animación de la barra
-            if (approved) {
-                message.innerText = "Test aprobado";
-                message.style.color = "green";
-                sendMessageToOpener("TestAprobado");
-            } else {
-                message.innerText = "Test fallido";
-                message.style.color = "red";
-                sendMessageToOpener("TestDenegado");
-            }
-            message.style.display = "block";
+            // Cerrar la ventana de prueba
+            window.close();
         }
 
         // Enviar mensaje al opener (ventana principal)
@@ -137,9 +42,8 @@
             }
         }
 
-        // Iniciar el proceso
+        // Iniciar el proceso al cargar la página
         checkMicrophonePermission();
     </script>
-
-
-</body></html>
+</body>
+</html>
